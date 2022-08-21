@@ -1,0 +1,62 @@
+version: '3'
+networks:
+  laravel-network:
+
+services:
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx-laravel
+    ports:
+      - "8090:80"
+    volumes:
+      - ./laravel/:/var/www/elnayef.com/
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    links:
+      - php-laravel
+      - mysql-laravel
+    networks:
+      - laravel-network
+  mysql-laravel:
+    image: mysql:5.7.22
+    container_name: mysql-laravel
+    restart: always
+    tty: true
+    ports:
+      - "4308:3306"
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: homestead
+      MYSQL_USER: homestead
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    networks:
+      - laravel-network
+  cache:
+    image: redis:7.0.4-alpine
+    container_name: redis-server
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning 
+    volumes: 
+      - cache:/redis-data
+    networks:
+      - laravel-network    
+  php-laravel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: php-laravel
+    volumes:
+      - ./laravel/:/var/www/elnayef.com/
+    ports:
+      - "9090:9000"
+    networks:
+      - laravel-network
+volumes:
+  cache:
+    driver: local
+
